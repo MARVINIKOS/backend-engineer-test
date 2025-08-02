@@ -1,8 +1,8 @@
-#  Developer Notes (Melk)
+##  Developer Notes (Melk)
 
 A simple blockchain indexer built with **Bun** and **Fastify** to demonstrate transaction validation, balance tracking, and rollback — all done in-memory.
 
-#  Features
+##  Features
 
 -  `POST /blocks`: Add a block of transactions
   - Ensures block height is strictly increasing
@@ -13,14 +13,14 @@ A simple blockchain indexer built with **Bun** and **Fastify** to demonstrate tr
 
 ---
 
-#  Architecture
+##  Architecture
 - **In-Memory UTXO Model**: Uses `Map` to simulate balances and UTXOs
 - **No Database**: No Postgres or file storage to keep it lightweight
 - **Self-contained**: All logic lives in `src/server.ts`
 - **Fully Tested**: Covers realistic scenarios in `spec/index.spec.ts`
 
   
-# Example Scenario
+## Example Scenario
 
 ```json
 // Block 1
@@ -74,7 +74,10 @@ bun run src/index.ts  # starts the API
 bun test              # runs tests
 
 
-# How to Run
+
+
+
+##How to Run
 --------------------------
 Install dependencies:
 
