@@ -1,96 +1,115 @@
-##  Developer Notes (Melk)
+# Block Indexer Challenge — Solution by Melk
+This solution implements a blockchain indexer using Bun + Fastify, with a clean, minimal in-memory architecture designed for speed and clarity.
 
-A simple blockchain indexer built with **Bun** and **Fastify** to demonstrate transaction validation, balance tracking, and rollback — all done in-memory.
+## 🔧 Features Implemented
+- POST /blocks
+Accepts new blocks with transactions and:
 
-##  Features
+ - Validates block height (must increment by 1)
 
--  `POST /blocks`: Add a block of transactions
-  - Ensures block height is strictly increasing
-  - Validates block hash (SHA-256 of height + transaction IDs)
-  - Verifies input/output value consistency
--  `GET /balance/:address`: Returns the current balance of an address
--  `POST /rollback?height=N`: Rolls back the blockchain to a given height and rebuilds state
+ - Validates block ID (SHA256 of height + transaction IDs)
 
----
+ - Ensures input sum = output sum across all transactions
 
-##  Architecture
-- **In-Memory UTXO Model**: Uses `Map` to simulate balances and UTXOs
-- **No Database**: No Postgres or file storage to keep it lightweight
-- **Self-contained**: All logic lives in `src/server.ts`
-- **Fully Tested**: Covers realistic scenarios in `spec/index.spec.ts`
+- GET /balance/:address
+   Returns the current balance for any address.
 
-  
-## Example Scenario
+- POST /rollback?height=X
+  Rolls back the state to a specified block height. All balances and UTXOs are recalculated from genesis.
 
-```json
-// Block 1
-{
-  "height": 1,
-  "transactions": [{
-    "id": "tx1",
-    "inputs": [],
-    "outputs": [{ "address": "addr1", "value": 10 }]
-  }]
-}
-// addr1 = 10
+##  How It Works
+State is stored in-memory using JavaScript Map():
 
-// Block 2
-{
-  "height": 2,
-  "transactions": [{
-    "id": "tx2",
-    "inputs": [{ "txId": "tx1", "index": 0 }],
-    "outputs": [
-      { "address": "addr2", "value": 4 },
-      { "address": "addr3", "value": 6 }
-    ]
-  }]
-}
-// addr1 = 0, addr2 = 4, addr3 = 6
+ - blockchain: list of valid blocks
 
-// Block 3
-{
-  "height": 3,
-  "transactions": [{
-    "id": "tx3",
-    "inputs": [{ "txId": "tx2", "index": 1 }],
-    "outputs": [
-      { "address": "addr4", "value": 2 },
-      { "address": "addr5", "value": 2 },
-      { "address": "addr6", "value": 2 }
-    ]
-  }]
-}
-// addr3 = 0, addr4-6 = 2 each
+ - utxos: unspent transaction outputs
 
-// Rollback
-POST /rollback?height=2
-// → addr3 = 6 again
-# How to Run
+ - balances: running total per address
 
-```bash
-bun install
-bun run src/index.ts  # starts the API
-bun test              # runs tests
-________________________________________________________________________________________________________________________________________________________________________________________________________
+Rollback clears all state and re-applies blocks up to the requested height.
 
+No persistent database is used — making testing and validation fast and deterministic.
 
+##  Test Scenario
+This project includes one complete test covering:
 
+A coinbase transaction to addr1
 
-## How to Run
---------------------------
+A spend from addr1 to addr2 and addr3
+
+A second spend from addr3 to addr4, addr5, and addr6
+
+A rollback to height 2 — and validation of all balances afterward
+
+Test result:
+bun test
+✓ assignment example scenario and rollback
+1 pass, 0 fail, 16 expect() calls 
+
+#  How to Run
 Install dependencies:
-
 bun install
--------------------------
-Start the API:
-bun run src/server.ts
 
-Run tests(for manula testing:
+Start the API:
 bun src/start.ts
+
+Run the tests:
+bun test
+
+
+# Developer Notes
+Solution written in TypeScript and run with Bun
+
+Lightweight, testable architecture with no database dependency
+
+Ideal for local development or proof-of-concept validation
+
+Let me know if you'd like me to automatically update your repo with this.
+
+
+
+
+
+
+
+
+Ask ChatGPT
+
 
 ________________________________________________________________________________________________________________________________________________________________________________________________________
 ## Company Instructions (Original Below)
+# EMURGO Backend Engineer Challenge
+
+This challenge is designed to evaluate your skills with data processing and API development. You will be responsible for creating an indexer that will keep track of the balance of each address in a blockchain.
+
+Please read all instructions bellow carefully.
+
+## Instructions
+Fork this repository and make the necessary changes to complete the challenge. Once you are done, simply send your repository link to us and we will review it.
+
+## Setup
+This coding challenge uses [Bun](https://bun.sh/) as its runtime. If you are unfamiliar with it, you can follow the instructions on the official website to install it - it works pretty much the same as NodeJS, but has a ton of features that make our life easier, like a built-in test engine and TypeScript compiler.
+
+Strictly speaking, because we run this project on Docker, you don't even need to have Bun installed on your machine. You can run the project using the `docker-compose` command, as described below.
+
+The setup for this coding challenge is quite simple. You need to have `docker` and `docker-compose` installed on your machine. If you don't have them installed, you can follow the instructions on the official docker website to install them.
+
+https://docs.docker.com/engine/install/
+https://docs.docker.com/compose/install/
+
+Once you have `docker` and `docker-compose` installed, you can run the following command to start the application:
+
+```bash
+docker-compose up -d --build
+or using Bun
+
+bun run-docker
+
+
+
+
+
+
 # EMURGO Backend Engineer Challenge
 
 This challenge is designed to evaluate your skills with data processing and API development. You will be responsible for creating an indexer that will keep track of the balance of each address in a blockchain.
@@ -245,4 +264,3 @@ Here we are evaluating your capacity to understand what should be tested and how
 -----------------------------------------------------------------------------------------------
 
 ---
-
