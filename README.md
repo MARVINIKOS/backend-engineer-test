@@ -43,7 +43,7 @@ A rollback to height 2 — and validation of all balances afterward
 
 Test result:
 bun test
-✓ assignment example scenario and rollback
+ assignment example scenario and rollback
 1 pass, 0 fail, 16 expect() calls 
 
 #  How to Run
