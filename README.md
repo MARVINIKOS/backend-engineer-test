@@ -166,7 +166,7 @@ This solution uses **Bun** and **Fastify**, with an in-memory architecture for s
 - `GET /balance/:address` — Returns the current balance for any address
 - `POST /rollback?height=X` — Rolls back all changes above a certain height
 
-# 🧠 Architecture
+#  Architecture
 
 - Used JavaScript `Map` objects to simulate UTXOs and balances
 - No database (Postgres) used to keep implementation lightweight
