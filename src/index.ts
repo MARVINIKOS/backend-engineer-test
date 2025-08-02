@@ -1,64 +1,112 @@
+// src/index.ts
 import Fastify from 'fastify';
-import { Pool } from 'pg';
-import { randomUUID } from 'crypto';
+import { createHash } from 'crypto';
 
 const fastify = Fastify({ logger: true });
 
-fastify.get('/', async (request, reply) => {
-  return { hello: 'world' };
-});
+// In-memory state
+let currentHeight = 0;
+const blocks: any[] = [];
+const transactions = new Map<string, any>();
+const unspentOutputs = new Map<string, any>();
+const balances = new Map<string, number>();
 
-async function testPostgres(pool: Pool) {
-  const id = randomUUID();
-  const name = 'Satoshi';
-  const email = 'Nakamoto';
-
-  await pool.query(`DELETE FROM users;`);
-
-  await pool.query(`
-    INSERT INTO users (id, name, email)
-    VALUES ($1, $2, $3);
-  `, [id, name, email]);
-
-  const { rows } = await pool.query(`
-    SELECT * FROM users;
-  `);
-
-  console.log('USERS', rows);
+function sha256(data: string): string {
+  return createHash('sha256').update(data).digest('hex');
 }
 
-async function createTables(pool: Pool) {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL
-    );
-  `);
-}
+fastify.post('/blocks', async (request, reply) => {
+  const block = request.body as {
+    id: string,
+    height: number,
+    transactions: Array<any>
+  };
 
-async function bootstrap() {
-  console.log('Bootstrapping...');
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL is required');
+  if (block.height !== currentHeight + 1) {
+    return reply.status(400).send({ error: 'Invalid block height' });
   }
 
-  const pool = new Pool({
-    connectionString: databaseUrl
-  });
+  const txIdsConcat = block.transactions.map(tx => tx.id).join('');
+  const computedId = sha256(block.height + txIdsConcat);
+  if (computedId !== block.id) {
+    return reply.status(400).send({ error: 'Invalid block ID hash' });
+  }
 
-  await createTables(pool);
-  await testPostgres(pool);
-}
+  // Validate and apply transactions
+  for (const tx of block.transactions) {
+    let inputTotal = 0;
+    let outputTotal = 0;
 
-try {
-  await bootstrap();
-  await fastify.listen({
-    port: 3000,
-    host: '0.0.0.0'
-  })
-} catch (err) {
-  fastify.log.error(err)
-  process.exit(1)
-};
+    for (const input of tx.inputs || []) {
+      const key = `${input.txId}:${input.index}`;
+      const utxo = unspentOutputs.get(key);
+      if (!utxo) return reply.status(400).send({ error: 'Invalid input UTXO' });
+      inputTotal += utxo.value;
+    }
+
+    for (const output of tx.outputs || []) {
+      outputTotal += output.value;
+    }
+
+    if (inputTotal !== outputTotal) {
+      return reply.status(400).send({ error: 'Input/output mismatch' });
+    }
+
+    // Spend inputs
+    for (const input of tx.inputs || []) {
+      const key = `${input.txId}:${input.index}`;
+      const utxo = unspentOutputs.get(key);
+      unspentOutputs.delete(key);
+      balances.set(utxo.address, (balances.get(utxo.address) || 0) - utxo.value);
+    }
+
+    // Create outputs
+    tx.outputs.forEach((output, index) => {
+      const key = `${tx.id}:${index}`;
+      unspentOutputs.set(key, output);
+      balances.set(output.address, (balances.get(output.address) || 0) + output.value);
+    });
+
+    transactions.set(tx.id, tx);
+  }
+
+  currentHeight++;
+  blocks.push(block);
+  return { message: 'Block accepted' };
+});
+
+fastify.get('/balance/:address', async (request, reply) => {
+  const address = (request.params as any).address;
+  const balance = balances.get(address) || 0;
+  return { balance };
+});
+
+fastify.post('/rollback', async (request, reply) => {
+  const height = Number((request.query as any).height);
+  if (height >= currentHeight || height < 0) {
+    return reply.status(400).send({ error: 'Invalid rollback height' });
+  }
+
+  // Keep a snapshot
+  const snapshot = blocks.slice(0, height);
+  // Reset all state
+  currentHeight = 0;
+  blocks.length = 0;
+  transactions.clear();
+  unspentOutputs.clear();
+  balances.clear();
+
+  // Re-apply up to the target height
+  for (const block of snapshot) {
+    await fastify.inject({ method: 'POST', url: '/blocks', payload: block });
+  }
+
+  return { message: `Rolled back to height ${height}` };
+});
+
+fastify.listen({ port: 3000 }, err => {
+  if (err) throw err;
+  console.log('Server running on http://localhost:3000');
+});
+
+export default fastify;
