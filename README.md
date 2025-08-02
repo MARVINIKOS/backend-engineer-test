@@ -146,3 +146,36 @@ Here we are evaluating your capacity to understand what should be tested and how
 ## Further Instructions
 - We expect you to handle errors and edge cases. Understanding what these are and how to handle them is part of the challenge;
 - We provided you with a setup to run the API and a Postgres database together using Docker, as well as some sample code to test the database connection. You can change this setup to use any other database you'd like;
+
+
+
+-----------------------------------------------------------------------------------------------
+
+---
+
+#  Developer Notes (Melk)
+
+This solution uses **Bun** and **Fastify**, with an in-memory architecture for simplicity and clarity.
+
+#  Implemented Endpoints
+
+- `POST /blocks` — Accepts a new block and validates:
+  - Block height (must increment by 1)
+  - Block ID (SHA256 of height + transaction IDs)
+  - Input/output value consistency
+- `GET /balance/:address` — Returns the current balance for any address
+- `POST /rollback?height=X` — Rolls back all changes above a certain height
+
+# 🧠 Architecture
+
+- Used JavaScript `Map` objects to simulate UTXOs and balances
+- No database (Postgres) used to keep implementation lightweight
+- All logic written in `src/index.ts`
+- Fully tested using `bun test` with 4 key cases in `spec/index.spec.ts`
+
+# How to Run
+
+```bash
+bun install
+bun run src/index.ts  # starts the API
+bun test              # runs tests
