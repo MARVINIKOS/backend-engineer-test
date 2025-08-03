@@ -55,27 +55,6 @@ bun src/start.ts
 
 Run the tests:
 bun test
-
-
-# Developer Notes
-Solution written in TypeScript and run with Bun
-
-Lightweight, testable architecture with no database dependency
-
-Ideal for local development or proof-of-concept validation
-
-Let me know if you'd like me to automatically update your repo with this.
-
-
-
-
-
-
-
-
-Ask ChatGPT
-
-
 ________________________________________________________________________________________________________________________________________________________________________________________________________
 ## Company Instructions (Original Below)
 # EMURGO Backend Engineer Challenge
