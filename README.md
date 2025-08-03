@@ -28,7 +28,7 @@ State is stored in-memory using JavaScript Map():
 
 Rollback clears all state and re-applies blocks up to the requested height.
 
-No persistent database is used — making testing and validation fast and deterministic.
+No persistent database is used.
 
 ##  Test Scenario
 This project includes one complete test covering:
@@ -39,7 +39,7 @@ A spend from addr1 to addr2 and addr3
 
 A second spend from addr3 to addr4, addr5, and addr6
 
-A rollback to height 2 — and validation of all balances afterward
+A rollback to height 2 and validation of all balances afterward
 
 Test result:
 bun test
